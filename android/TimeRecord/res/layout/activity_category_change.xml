@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <EditText
+        android:id="@+id/editName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </EditText>
+
+    <LinearLayout
+        android:id="@+id/linearLayout1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <RadioGroup
+            android:id="@+id/radioGroup1"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1" android:orientation="horizontal">
+
+	       <RadioButton
+	           android:id="@+id/radioSon"
+	           android:layout_width="fill_parent"
+	           android:layout_height="wrap_content"
+	           android:layout_weight="1"
+	           android:text="@string/radioSon" />
+	
+	       <RadioButton
+	           android:id="@+id/radioFather"
+	           android:layout_width="fill_parent"
+	           android:layout_height="wrap_content"
+	           android:layout_weight="1"
+	           android:text="@string/radioFather" />
+	       
+        </RadioGroup>
+
+    </LinearLayout>
+
+    <Spinner
+        android:id="@+id/spinnerCategory"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content" />
+
+    <LinearLayout
+        android:id="@+id/linearLayout2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+
+        <Button
+            android:id="@+id/btnOk"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/add" />
+
+        <Button
+            android:id="@+id/btnCannel"
+            android:layout_width="fill_parent"
+            android:layout_height="fill_parent"
+            android:layout_weight="1"
+            android:text="@string/cannel" />
+    </LinearLayout>
+
+</LinearLayout>
