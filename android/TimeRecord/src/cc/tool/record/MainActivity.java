@@ -19,6 +19,7 @@ import android.widget.SimpleCursorAdapter;
 import android.widget.TextView;
 import cc.tool.record.TimeRecord.RecordColumns;
 
+// just test git
 public class MainActivity extends ListActivity implements OnClickListener {
 
 	private TextView mTvTime;
