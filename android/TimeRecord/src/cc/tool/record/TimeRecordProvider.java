@@ -194,6 +194,9 @@ public class TimeRecordProvider extends ContentProvider {
         
         if (mIsId) {
             String deleteId = uri.getPathSegments().get(1);
+            String ddString = BaseColumns._ID + "=" + deleteId
+                    + (!TextUtils.isEmpty(selection) ? " AND (" + selection + ')' : "");
+            
             count = db.delete(mSelectTable, BaseColumns._ID + "=" + deleteId
                     + (!TextUtils.isEmpty(selection) ? " AND (" + selection + ')' : ""), selectionArgs);
         } else {

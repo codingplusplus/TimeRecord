@@ -80,8 +80,8 @@ public class CategoryActivity extends ExpandableListActivity {
 
 		String title = itemText.getText().toString();
 		menu.setHeaderTitle(title);
-		menu.add(0, 0, 0, R.string.menu_delete_category);
-		menu.add(0, 1, 1, R.string.menu_change_category);
+		menu.add(0, 0, 0, R.string.menu_delete);
+		menu.add(0, 1, 1, R.string.menu_change);
 	}
 
 	@Override
@@ -110,7 +110,6 @@ public class CategoryActivity extends ExpandableListActivity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		menu.add(0, 1, 0, R.string.menu_add_category);
-		menu.add(0, 2, 1, R.string.menu_delete_category);
 
 		return super.onCreateOptionsMenu(menu);
 	}

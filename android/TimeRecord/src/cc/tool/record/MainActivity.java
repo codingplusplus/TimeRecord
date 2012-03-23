@@ -5,21 +5,32 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.ListActivity;
+import android.content.ContentResolver;
+import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.MenuItem;
 import android.view.View;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup.LayoutParams;
+import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
-import android.widget.CursorAdapter;
-import android.widget.SimpleCursorAdapter;
+import android.widget.ExpandableListView;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
+import cc.tool.record.TimeRecord.CategoryColumns;
 import cc.tool.record.TimeRecord.RecordColumns;
 
-// just test git
 public class MainActivity extends ListActivity implements OnClickListener {
 
 	private TextView mTvTime;
@@ -33,6 +44,12 @@ public class MainActivity extends ListActivity implements OnClickListener {
 	
 	private long mTimeStart;
 	private long mTimeEnd;
+	
+	static final String[] sSelectCategory = {
+		RecordColumns.BEGIN, RecordColumns.END, 
+		RecordColumns.CATEGORY, RecordColumns.NOTE,
+		RecordColumns._ID
+	};
 	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -55,8 +72,6 @@ public class MainActivity extends ListActivity implements OnClickListener {
 			}
 		};
 		
-		
-		Log.d("main", "oncreate");
 	}
 	
 	@Override
@@ -65,37 +80,148 @@ public class MainActivity extends ListActivity implements OnClickListener {
 
 		initTime();
 		setList();
-		Log.d("main", "onstart");
+	}
+
+	private static final int sContextMenuModify = 1;
+	private static final int sContextMenuDelete = 2;
+	
+	@Override
+	public void onCreateContextMenu(ContextMenu menu, View v,
+			ContextMenuInfo menuInfo) {
+		menu.add(0, sContextMenuDelete, 1, R.string.menu_delete);
+		menu.add(0, sContextMenuModify, 0, R.string.menu_change);
 	}
 	
 	@Override
-	protected void onResume() {
-		super.onResume();
-		Log.d("main", "onResume");
+	public boolean onContextItemSelected(MenuItem item) {
+		AdapterContextMenuInfo info;
+		info = (AdapterContextMenuInfo) item.getMenuInfo();
+		Uri uri = ContentUris.withAppendedId(RecordColumns.CONTENT_URI, info.id);
+		
+		switch (item.getItemId()) {
+		case sContextMenuModify:
+			
+			break;
+			
+		case sContextMenuDelete:
+			getContentResolver().delete(uri, null, null);
+			break;
+
+		default:
+			break;
+		}
+		return super.onContextItemSelected(item);
 	}
 	
+	private String getToday() {
+		String today = "";
+		Calendar cal = Calendar.getInstance();
+		cal.set(Calendar.HOUR_OF_DAY, 0);
+		cal.set(Calendar.MINUTE, 0);
+		cal.set(Calendar.SECOND, 0);
+		cal.set(Calendar.MILLISECOND, 0);
+		
+		today += RecordColumns.BEGIN;
+		today += String.format(" >= %d and ", cal.getTimeInMillis());
+		
+		cal.add(Calendar.HOUR_OF_DAY, 24);
+		today += RecordColumns.BEGIN;
+		today += String.format(" < %d", cal.getTimeInMillis());
+		
+		return today;
+	}
+		
 	private void setList() {
         getListView().setEmptyView(findViewById(R.id.empty));
         
-        Cursor mCursor = this.getContentResolver().query(RecordColumns.CONTENT_URI, null, null, null, null);
+        Cursor mCursor = this.getContentResolver().query(RecordColumns.CONTENT_URI, 
+        		sSelectCategory, getToday(), null, RecordColumns.BEGIN);
         startManagingCursor(mCursor);
 
-        CursorAdapter mAdapter = new SimpleCursorAdapter(
-                this, 
-                R.layout.list_item_all,
-                mCursor,                                              
-                new String[] {RecordColumns.BEGIN, 
-                			RecordColumns.END,
-                			RecordColumns.CATEGORY,
-                			RecordColumns.NOTE},           
-                new int[] {R.id.begin, 
-                		R.id.duration,
-                		R.id.category,
-                		R.id.note});  
+        TodayCoursrAdapter mAdapter = new TodayCoursrAdapter(this, 
+        		R.layout.list_item_all, mCursor);
 
         setListAdapter(mAdapter);
+        registerForContextMenu(getListView());
 	}
 
+	class TodayCoursrAdapter extends ResourceCursorAdapter {
+
+		public TodayCoursrAdapter(Context context, int layout, Cursor c) {
+			super(context, layout, c);
+		}
+
+		@Override
+		public void bindView(View view, Context context, Cursor cursor) {
+			long begin = cursor.getLong(0);
+			long end = cursor.getLong(1);
+			String note = cursor.getString(3);
+			
+			
+			long category = cursor.getInt(2);
+			
+			Uri uri = ContentUris.withAppendedId(CategoryColumns.CONTENT_URI, category);
+			Cursor curCategory = context.getContentResolver().query(uri, 
+					new String[] { CategoryColumns.NAME }, null, null, null);
+			curCategory.moveToFirst();
+			String categoryName = curCategory.getString(0);
+						
+			LinearLayout layout = (LinearLayout) view;
+			TextView beginView = (TextView) layout.findViewById(R.id.begin);
+			TextView endView = (TextView) layout.findViewById(R.id.end);
+			TextView categoryView = (TextView) layout.findViewById(R.id.category);
+			TextView durationView = (TextView) layout.findViewById(R.id.duration);
+			TextView noteView = (TextView) layout.findViewById(R.id.note);
+			
+			beginView.setText(GeneralModule.dateToString(begin));
+			endView.setText(GeneralModule.dateToString(end));
+			categoryView.setText(categoryName);
+			durationView.setText(getDuration(begin, end));
+			if (note.equals("")) {
+				LayoutParams lp = noteView.getLayoutParams();
+				lp.height = 1;
+				noteView.setLayoutParams(lp);
+				layout.requestLayout();
+			}
+			
+			noteView.setText(note);
+			
+		}
+		
+		private String getDuration(long begin, long end) {
+			Calendar calBegin = Calendar.getInstance();
+			calBegin.setTimeInMillis(begin);
+			calBegin.set(Calendar.SECOND, 0);
+			calBegin.set(Calendar.MILLISECOND, 0);
+			
+			Calendar calEnd = Calendar.getInstance();
+			calEnd.setTimeInMillis(end);
+			calEnd.set(Calendar.MILLISECOND, 0);
+			calEnd.set(Calendar.SECOND, 0);
+			
+			long durationMills = calEnd.getTimeInMillis() - calBegin.getTimeInMillis();
+			long oneMinuteMills = 60 * 1000;
+			long oneHourMills = 60 * oneMinuteMills;
+			long hour = durationMills / oneHourMills;
+			long minute = (durationMills % oneHourMills) / oneMinuteMills; 
+			
+			
+			
+			return formatNumber(hour) + "." + formatNumber(minute);
+		}
+		
+		private String formatNumber(long number) {
+			if (number / 10 == 0) {
+				if (number == 0) {
+					return "00";
+				} else {
+					return "0"+number;
+				}
+			} else {
+				return number+"";
+			}
+		}
+	}
 	
 	@Override
 	public void onClick(View v) {
@@ -180,4 +306,5 @@ public class MainActivity extends ListActivity implements OnClickListener {
 			}
 		}, 0, 1000);
 	}
+	
 }

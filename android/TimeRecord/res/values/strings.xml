@@ -9,16 +9,17 @@
     <string name="add">确定</string>
     <string name="cannel">取消</string>
     <string name="menu_add_category">新建类别</string>
-    <string name="menu_delete_category">删除</string>
-    <string name="menu_change_category">修改</string>
+    <string name="menu_delete">删除</string>
+    <string name="menu_change">修改</string>
     <string name="radioFather">设为父类</string>
     <string name="radioSon">设为子类</string>
     <string name="category_is_empty">类别名不能为空</string>
     <string name="category_is_repeat">类名不能重复</string>
     <string name="to"> 至 </string>
-    <string name="ok">确定</string>
     <string name="will_delete_record">条属于该类别的记录将被一起删除</string>
+    <string name="ok">确定</string>
     <string name="begin_greater_than_end">开始时间不能大于结束时间</string>
     <string name="category_no_select">请选择一个类别</string>
-
+    <string name="will_delete_child">将删除%1$d个子类别\n(%2$s)</string>
+    <string name="will_delete_child_and_record">将删除%1$d个子类别和%3$d条记录\n(%2$s)</string>
 </resources>

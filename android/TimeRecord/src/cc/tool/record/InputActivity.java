@@ -1,5 +1,8 @@
 package cc.tool.record;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.ExpandableListActivity;
@@ -20,6 +23,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
+import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
@@ -83,12 +87,13 @@ public class InputActivity extends ExpandableListActivity implements
 
 		String title = itemText.getText().toString();
 		menu.setHeaderTitle(title);
-		menu.add(0, sContextMenuDelete, 1, R.string.menu_delete_category);
-		menu.add(0, sContextMenuModify, 0, R.string.menu_change_category);
+		menu.add(0, sContextMenuDelete, 1, R.string.menu_delete);
+		menu.add(0, sContextMenuModify, 0, R.string.menu_change);
 	}
 
 	private static String mDialogTitle;
 	private static long mDialogSelectId;
+	private static List<Long> mDialogSelectIds;
 
 	@Override
 	public boolean onContextItemSelected(MenuItem item) {
@@ -104,47 +109,68 @@ public class InputActivity extends ExpandableListActivity implements
 			Cursor curParent = cr.query(selectUri,
 					new String[] { CategoryColumns.TYPE }, null, null, null);
 			curParent.moveToFirst();
-			long parent = curParent.getLong(0);
-			if (parent == 0) {
+			if (curParent.getLong(0) == 0) { // delete father category
 				Cursor curAllChild = cr.query(CategoryColumns.CONTENT_URI,
-						new String[] { CategoryColumns._ID },
-						CategoryColumns.TYPE + String.format("=%d", id),
-						null, null);
-				if (curAllChild.getCount() != 0) {
+						new String[] { CategoryColumns._ID, CategoryColumns.NAME }, 
+						CategoryColumns.TYPE + "=" + id, null, null);
+
+				int childCount = curAllChild.getCount();
+				if (childCount != 0) {
+					mDialogSelectId = id;
+					mDialogSelectIds = new ArrayList<Long>();
+					String allChildName = "";
+					int recordCount = 0;
+
 					curAllChild.moveToFirst();
 					do {
-						long childId = curAllChild.getLong(0);
+						Long childId = curAllChild.getLong(0);
+						String childName = curAllChild.getString(1);
 
-						cr.delete(RecordColumns.CONTENT_URI, 
-								RecordColumns.CATEGORY + String.format("=%d", childId),
+						mDialogSelectIds.add(childId);
+						allChildName += childName;
+						allChildName += ", ";
+						Cursor curRecord = cr.query(RecordColumns.CONTENT_URI,
+								new String[] { RecordColumns._ID },
+								RecordColumns.CATEGORY + "=" + childId, null,
 								null);
-
-						Uri uriChild = ContentUris.withAppendedId(
-								CategoryColumns.CONTENT_URI, childId);
-
-						cr.delete(uriChild, null, null);
+						recordCount += curRecord.getCount();
+						
 					} while (curAllChild.moveToNext());
-				}
-				cr.delete(selectUri, null, null);
+					allChildName = allChildName.substring(0,
+							allChildName.length() - 2);
 
-			} else {
+					if (recordCount == 0) {
+						mDialogTitle = String.format(
+								getString(R.string.will_delete_child),
+								childCount, allChildName);
+					} else {
+						mDialogTitle = String
+								.format(getString(R.string.will_delete_child_and_record),
+										childCount, allChildName, recordCount);
+					}
+					removeDialog(DIALOG_DELETE_FATHER);
+					showDialog(DIALOG_DELETE_FATHER);
+				} else {
+					cr.delete(selectUri, null, null);
+				}
+				
+			} else { // delete children category
 				Cursor cursor = cr.query(RecordColumns.CONTENT_URI,
 						new String[] { RecordColumns._ID },
-						RecordColumns.CATEGORY + String.format("=%d", id),
-						null, null);
+						RecordColumns.CATEGORY + "=" + id, null, null);
 
 				if (cursor.getCount() != 0) {
 					mDialogSelectId = id;
-					mDialogTitle = String.format("%d", cursor.getCount())
+					mDialogTitle = cursor.getCount()
 							+ getString(R.string.will_delete_record);
+					removeDialog(DIALOG_DELETE_CHILD);
 					showDialog(DIALOG_DELETE_CHILD);
 				} else {
-					cr.delete(RecordColumns.CONTENT_URI, RecordColumns.CATEGORY
-							+ String.format("=%d", id), null);
 					cr.delete(selectUri, null, null);
 				}
 			}
 			break;
+			
 		case sContextMenuModify:
 			Intent intent = new Intent(this, CategoryChange.class);
 			intent.putExtra(CategoryChange.sID, info.id);
@@ -158,12 +184,13 @@ public class InputActivity extends ExpandableListActivity implements
 	}
 
 	private static final int DIALOG_DELETE_CHILD = 1;
+	private static final int DIALOG_DELETE_FATHER = 2;
 
 	@Override
 	protected Dialog onCreateDialog(int id) {
 		switch (id) {
 		case DIALOG_DELETE_CHILD:
-			return new AlertDialog.Builder(InputActivity.this)
+			return new AlertDialog.Builder(this)
 					.setTitle(mDialogTitle)
 					.setPositiveButton(R.string.ok,
 							new DialogInterface.OnClickListener() {
@@ -175,13 +202,45 @@ public class InputActivity extends ExpandableListActivity implements
 											CategoryColumns.CONTENT_URI,
 											mDialogSelectId);
 
-									cr.delete(
-											RecordColumns.CONTENT_URI,
-											RecordColumns.CATEGORY
-													+ String.format("=%d",
-															mDialogSelectId),
-											null);
+									cr.delete(RecordColumns.CONTENT_URI,
+											RecordColumns.CATEGORY + "="
+													+ mDialogSelectId, null);
 									cr.delete(selectUri, null, null);
+								}
+							})
+					.setNegativeButton(R.string.cannel,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int whichButton) {
+								}
+							}).create();
+
+		case DIALOG_DELETE_FATHER:
+			return new AlertDialog.Builder(this)
+					.setTitle(mDialogTitle)
+					.setPositiveButton(R.string.ok,
+							new DialogInterface.OnClickListener() {
+								public void onClick(DialogInterface dialog,
+										int whichButton) {
+									ContentResolver cr = InputActivity.this
+											.getContentResolver();
+									for (Long childId : mDialogSelectIds) {
+										cr.delete(RecordColumns.CONTENT_URI,
+												RecordColumns.CATEGORY + "="
+														+ childId, null);
+
+										Uri uriChild = ContentUris
+												.withAppendedId(
+														CategoryColumns.CONTENT_URI,
+														childId);
+
+										cr.delete(uriChild, null, null);
+										
+									}
+									cr.delete(CategoryColumns.CONTENT_URI, 
+											CategoryColumns._ID + "=" 
+												+ mDialogSelectId, 
+											null);
 								}
 							})
 					.setNegativeButton(R.string.cannel,
@@ -216,7 +275,9 @@ public class InputActivity extends ExpandableListActivity implements
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
 		mCategory = id;
-		return true;
+		CheckedTextView ctv = (CheckedTextView) v;
+		ctv.setChecked(true);
+		return false;
 	}
 
 	private void initExpandable() {
@@ -225,19 +286,23 @@ public class InputActivity extends ExpandableListActivity implements
 				new String(CategoryColumns.TYPE + "=0"), null, null);
 		mGroupIndex = groupCursor.getColumnIndex(CategoryColumns._ID);
 
-		mAdapter = new CategoryAdapter(groupCursor, this,
+		mAdapter = new CategoryAdapter(
+				groupCursor,
+				this,
 				android.R.layout.simple_expandable_list_item_1,
 				android.R.layout.simple_list_item_single_choice,
 				new String[] { CategoryColumns.NAME },
 				new int[] { android.R.id.text1 },
 				new String[] { CategoryColumns.NAME },
 				new int[] { android.R.id.text1 });
+
 		setListAdapter(mAdapter);
-		registerForContextMenu(getExpandableListView());
-		
-		ExpandableListView listView  = getExpandableListView();
+
+		final ExpandableListView listView = getExpandableListView();
 		listView.setItemsCanFocus(false);
 		listView.setChoiceMode(listView.CHOICE_MODE_SINGLE);
+
+		registerForContextMenu(getExpandableListView());
 
 		output();
 	}
@@ -256,6 +321,11 @@ public class InputActivity extends ExpandableListActivity implements
 			long id = groupCursor.getLong(mGroupIndex);
 			return managedQuery(CategoryColumns.CONTENT_URI, mCategoryItem,
 					CategoryColumns.TYPE + String.format("=%d", id), null, null);
+		}
+
+		@Override
+		public ViewBinder getViewBinder() {
+			return super.getViewBinder();
 		}
 	}
 
@@ -361,23 +431,25 @@ public class InputActivity extends ExpandableListActivity implements
 
 	private void add() {
 		if (mTimeBegin > mTimeEnd) {
-			Toast.makeText(this, R.string.begin_greater_than_end, Toast.LENGTH_SHORT).show();
-			return ;
-		}
-		
-		if (mCategory == 0) {
-			Toast.makeText(this, R.string.category_no_select, Toast.LENGTH_SHORT).show();
+			Toast.makeText(this, R.string.begin_greater_than_end,
+					Toast.LENGTH_SHORT).show();
 			return;
 		}
-		
+
+		if (mCategory == 0) {
+			Toast.makeText(this, R.string.category_no_select,
+					Toast.LENGTH_SHORT).show();
+			return;
+		}
+
 		ContentValues values = new ContentValues();
 		values.put(RecordColumns.BEGIN, mTimeBegin);
 		values.put(RecordColumns.END, mTimeEnd);
-		
+
 		values.put(RecordColumns.CATEGORY, mCategory);
 		values.put(RecordColumns.NOTE, mEditNote.getText().toString());
 		getContentResolver().insert(RecordColumns.CONTENT_URI, values);
-		
+
 		finish();
 	}
 }
