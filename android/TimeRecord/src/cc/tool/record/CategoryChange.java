@@ -143,7 +143,6 @@ public class CategoryChange extends Activity implements OnClickListener {
 			radioFather.setVisibility(View.INVISIBLE);
 			spinnerCategory.setSelection(mMapCategoryPos.get(type));
 		}
-		
 	}
 
 	private long mCategoryType;

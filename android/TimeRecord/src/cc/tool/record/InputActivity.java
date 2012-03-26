@@ -36,8 +36,9 @@ import cc.tool.record.TimeRecord.RecordColumns;
 public class InputActivity extends ExpandableListActivity implements
 		OnClickListener {
 
-	public static String sBEGIN = "BEGIN";
-	public static String sEnd = "END";
+	public static final String sBEGIN = "BEGIN";
+	public static final String sEnd = "END";
+	public static final String sId = "ID";
 
 	private Button mBtnBegin;
 	private Button mBtnEnd;
@@ -56,6 +57,8 @@ public class InputActivity extends ExpandableListActivity implements
 
 	public static String[] mCategoryItem = new String[] { CategoryColumns._ID,
 			CategoryColumns.NAME };
+	
+	private Uri mUri;
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
@@ -66,15 +69,32 @@ public class InputActivity extends ExpandableListActivity implements
 		initExpandable();
 	}
 
+	private static final int OPTION_MENU_ADD = 1;
+	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		menu.add(0, 1, 0, R.string.menu_add_category);
+		menu.add(0, OPTION_MENU_ADD, 0, R.string.menu_add_category);
 
 		return super.onCreateOptionsMenu(menu);
 	}
 
-	private static final int sContextMenuModify = 1;
-	private static final int sContextMenuDelete = 2;
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		switch (item.getItemId()) {
+		case OPTION_MENU_ADD:
+			Intent i = new Intent(this, CategoryChange.class);
+			i.putExtra(CategoryChange.sID, 0);
+			startActivity(i);
+			break;
+
+		default:
+			break;
+		}
+		return super.onOptionsItemSelected(item);
+	}
+
+	private static final int CONTEXT_MENU_MODIFY = 1;
+	private static final int CONTEXT_MENU_DELETE = 2;
 
 	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v,
@@ -87,10 +107,10 @@ public class InputActivity extends ExpandableListActivity implements
 
 		String title = itemText.getText().toString();
 		menu.setHeaderTitle(title);
-		menu.add(0, sContextMenuDelete, 1, R.string.menu_delete);
-		menu.add(0, sContextMenuModify, 0, R.string.menu_change);
+		menu.add(0, CONTEXT_MENU_DELETE, 1, R.string.menu_delete);
+		menu.add(0, CONTEXT_MENU_MODIFY, 0, R.string.menu_change);
 	}
-
+	
 	private static String mDialogTitle;
 	private static long mDialogSelectId;
 	private static List<Long> mDialogSelectIds;
@@ -104,7 +124,7 @@ public class InputActivity extends ExpandableListActivity implements
 				id);
 
 		switch (item.getItemId()) {
-		case sContextMenuDelete:
+		case CONTEXT_MENU_DELETE:
 			ContentResolver cr = getContentResolver();
 			Cursor curParent = cr.query(selectUri,
 					new String[] { CategoryColumns.TYPE }, null, null, null);
@@ -171,7 +191,7 @@ public class InputActivity extends ExpandableListActivity implements
 			}
 			break;
 			
-		case sContextMenuModify:
+		case CONTEXT_MENU_MODIFY:
 			Intent intent = new Intent(this, CategoryChange.class);
 			intent.putExtra(CategoryChange.sID, info.id);
 			startActivity(intent);
@@ -257,21 +277,6 @@ public class InputActivity extends ExpandableListActivity implements
 	}
 
 	@Override
-	public boolean onOptionsItemSelected(MenuItem item) {
-		switch (item.getItemId()) {
-		case 1:
-			Intent i = new Intent(this, CategoryChange.class);
-			i.putExtra(CategoryChange.sID, 0);
-			startActivity(i);
-			break;
-
-		default:
-			break;
-		}
-		return super.onOptionsItemSelected(item);
-	}
-
-	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
 		mCategory = id;
@@ -348,17 +353,40 @@ public class InputActivity extends ExpandableListActivity implements
 		}
 	}
 
+	static private final String sRecordAllColumns[] = {
+		RecordColumns.BEGIN,
+		RecordColumns.END,
+		RecordColumns.CATEGORY,
+		RecordColumns.NOTE
+	};
+	
 	private void init() {
 		Bundle bundle = getIntent().getExtras();
-		mTimeBegin = bundle.getLong(sBEGIN);
-		mTimeEnd = bundle.getLong(sEnd);
+		long id = bundle.getLong(sId);
+		long begin, end;
+		String note = "";
+		if (id == 0) {
+			begin = bundle.getLong(sBEGIN);
+			end = bundle.getLong(sEnd);
+		} else {
+			mUri = ContentUris.withAppendedId(RecordColumns.CONTENT_URI, id);
+			Cursor cursor = managedQuery(mUri, sRecordAllColumns, null, null, null);
+			cursor.moveToFirst();
+			begin = cursor.getLong(0);
+			end = cursor.getLong(1);
+			mCategory = cursor.getLong(2);
+			note = cursor.getString(3);
+		}
+		
+		mTimeBegin = begin;
+		mTimeEnd = end;
 
 		mBtnBegin = (Button) findViewById(R.id.btnBegin);
-		mBtnBegin.setText(GeneralModule.dateToString(mTimeBegin));
+		mBtnBegin.setText(GeneralModule.timeToString(mTimeBegin));
 		mBtnBegin.setOnClickListener(this);
 
 		mBtnEnd = (Button) findViewById(R.id.btnEnd);
-		mBtnEnd.setText(GeneralModule.dateToString(mTimeEnd));
+		mBtnEnd.setText(GeneralModule.timeToString(mTimeEnd));
 		mBtnEnd.setOnClickListener(this);
 
 		mBtnAdd = (Button) findViewById(R.id.btnAdd);
@@ -368,12 +396,13 @@ public class InputActivity extends ExpandableListActivity implements
 		mBtnCannel.setOnClickListener(this);
 
 		mEditNote = (EditText) findViewById(R.id.editNote);
+		mEditNote.setText(note);
 
 		mBtnBegin.setFocusable(true);
 	}
 
 	private void setTimeDisplay(Button btnTime, long time) {
-		btnTime.setText(GeneralModule.dateToString(time));
+		btnTime.setText(GeneralModule.timeToString(time));
 	}
 
 	private final static int sRequestBegin = 1;
@@ -448,7 +477,12 @@ public class InputActivity extends ExpandableListActivity implements
 
 		values.put(RecordColumns.CATEGORY, mCategory);
 		values.put(RecordColumns.NOTE, mEditNote.getText().toString());
-		getContentResolver().insert(RecordColumns.CONTENT_URI, values);
+		
+		if (mUri == null) {
+			getContentResolver().insert(RecordColumns.CONTENT_URI, values);
+		} else {
+			getContentResolver().update(mUri, values, null, null);
+		}
 
 		finish();
 	}

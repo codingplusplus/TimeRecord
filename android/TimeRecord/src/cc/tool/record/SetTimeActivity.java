@@ -21,7 +21,7 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.activity_set_time);
+		setContentView(R.layout.dialog_set_time);
 		
 		init();
 	}
@@ -54,6 +54,7 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 	}
 	
 	public static int sResultOk = 1; 
+	public static int sResultCannel = 2;
 	
 	private long getTime() {
 		int year = datePicker.getYear();
@@ -78,6 +79,7 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 			break;
 			
 		case R.id.btnCannel:
+			setResult(sResultCannel);
 			finish();
 			break;
 			
