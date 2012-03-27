@@ -289,6 +289,7 @@ public class InputActivity extends ExpandableListActivity implements
 		}
 		mCheckedTextView = (CheckedTextView) v;
 		mCheckedTextView.setChecked(true);
+		mAdapter.setSelectChildId(id);
 
 		return true;
 	}
@@ -328,7 +329,13 @@ public class InputActivity extends ExpandableListActivity implements
 			return managedQuery(CategoryColumns.CONTENT_URI, mCategoryItem,
 					CategoryColumns.TYPE + String.format("=%d", id), null, null);
 		}
-
+		
+		private long mSelectChildId;
+		
+		public void setSelectChildId(long id) {
+			mSelectChildId = id;
+		}
+		
 		@Override
 		protected void bindGroupView(View view, Context context, Cursor cursor,
 				boolean isExpanded) {
@@ -357,6 +364,14 @@ public class InputActivity extends ExpandableListActivity implements
 			
 			String name = cursor.getString(1);
 			ctv.setText(name);
+			
+			long id = cursor.getLong(0);
+			if (id == mSelectChildId) {
+				ctv.setChecked(true);
+			} else {
+				ctv.setChecked(false);
+			}
+			
 			view = ctv;
 		}
 	}

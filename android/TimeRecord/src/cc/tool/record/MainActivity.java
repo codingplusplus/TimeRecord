@@ -68,12 +68,7 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 		};
 		
 		setList();
-	}
-	
-	@Override
-	protected void onStart() {
 		initTime();
-		super.onStart();
 	}
 	
 	@Override
@@ -225,6 +220,8 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 		intent.putExtra(InputActivity.sBEGIN, mTimeBegin);
 		intent.putExtra(InputActivity.sEnd, mTimeEnd);
 		this.startActivity(intent);
+
+		initTime();
 	}
 
 	private long getTimeMill() {
