@@ -2,9 +2,6 @@ package cc.tool.record;
 
 import java.util.Calendar;
 
-import cc.tool.record.TimeRecord.CategoryColumns;
-import cc.tool.record.TimeRecord.RecordColumns;
-
 import android.content.ContentUris;
 import android.content.Context;
 import android.database.Cursor;
@@ -15,6 +12,8 @@ import android.view.ViewGroup.LayoutParams;
 import android.widget.LinearLayout;
 import android.widget.ResourceCursorAdapter;
 import android.widget.TextView;
+import cc.tool.record.TimeRecord.CategoryColumns;
+import cc.tool.record.TimeRecord.RecordColumns;
 
 public class GeneralModule {
 	

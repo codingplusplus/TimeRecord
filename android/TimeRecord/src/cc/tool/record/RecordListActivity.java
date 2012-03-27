@@ -1,18 +1,17 @@
 package cc.tool.record;
 
-import cc.tool.record.GeneralModule.TodayCoursrAdapter;
-import cc.tool.record.TimeRecord.RecordColumns;
 import android.app.ListActivity;
 import android.content.ContentUris;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
 import android.view.ContextMenu;
+import android.view.ContextMenu.ContextMenuInfo;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ContextMenu.ContextMenuInfo;
-import android.widget.SimpleCursorTreeAdapter;
 import android.widget.AdapterView.AdapterContextMenuInfo;
+import cc.tool.record.GeneralModule.TodayCoursrAdapter;
+import cc.tool.record.TimeRecord.RecordColumns;
 
 public abstract class RecordListActivity extends ListActivity {
 	

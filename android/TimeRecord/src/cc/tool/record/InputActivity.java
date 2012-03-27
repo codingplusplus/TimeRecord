@@ -27,9 +27,7 @@ import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
-import android.widget.LinearLayout;
-import android.widget.RadioButton;
-import android.widget.SimpleCursorTreeAdapter;
+import android.widget.ResourceCursorTreeAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
 import cc.tool.record.TimeRecord.CategoryColumns;
@@ -59,7 +57,7 @@ public class InputActivity extends ExpandableListActivity implements
 
 	public static String[] mCategoryItem = new String[] { CategoryColumns._ID,
 			CategoryColumns.NAME };
-	
+
 	private Uri mUri;
 
 	@Override
@@ -72,7 +70,7 @@ public class InputActivity extends ExpandableListActivity implements
 	}
 
 	private static final int OPTION_MENU_ADD = 1;
-	
+
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		menu.add(0, OPTION_MENU_ADD, 0, R.string.menu_add_category);
@@ -112,7 +110,7 @@ public class InputActivity extends ExpandableListActivity implements
 		menu.add(0, CONTEXT_MENU_DELETE, 1, R.string.menu_delete);
 		menu.add(0, CONTEXT_MENU_MODIFY, 0, R.string.menu_change);
 	}
-	
+
 	private static String mDialogTitle;
 	private static long mDialogSelectId;
 	private static List<Long> mDialogSelectIds;
@@ -133,8 +131,9 @@ public class InputActivity extends ExpandableListActivity implements
 			curParent.moveToFirst();
 			if (curParent.getLong(0) == 0) { // delete father category
 				Cursor curAllChild = cr.query(CategoryColumns.CONTENT_URI,
-						new String[] { CategoryColumns._ID, CategoryColumns.NAME }, 
-						CategoryColumns.TYPE + "=" + id, null, null);
+						new String[] { CategoryColumns._ID,
+								CategoryColumns.NAME }, CategoryColumns.TYPE
+								+ "=" + id, null, null);
 
 				int childCount = curAllChild.getCount();
 				if (childCount != 0) {
@@ -156,7 +155,7 @@ public class InputActivity extends ExpandableListActivity implements
 								RecordColumns.CATEGORY + "=" + childId, null,
 								null);
 						recordCount += curRecord.getCount();
-						
+
 					} while (curAllChild.moveToNext());
 					allChildName = allChildName.substring(0,
 							allChildName.length() - 2);
@@ -175,7 +174,7 @@ public class InputActivity extends ExpandableListActivity implements
 				} else {
 					cr.delete(selectUri, null, null);
 				}
-				
+
 			} else { // delete children category
 				Cursor cursor = cr.query(RecordColumns.CONTENT_URI,
 						new String[] { RecordColumns._ID },
@@ -192,7 +191,7 @@ public class InputActivity extends ExpandableListActivity implements
 				}
 			}
 			break;
-			
+
 		case CONTEXT_MENU_MODIFY:
 			Intent intent = new Intent(this, CategoryChange.class);
 			intent.putExtra(CategoryChange.sID, info.id);
@@ -257,12 +256,11 @@ public class InputActivity extends ExpandableListActivity implements
 														childId);
 
 										cr.delete(uriChild, null, null);
-										
+
 									}
-									cr.delete(CategoryColumns.CONTENT_URI, 
-											CategoryColumns._ID + "=" 
-												+ mDialogSelectId, 
-											null);
+									cr.delete(CategoryColumns.CONTENT_URI,
+											CategoryColumns._ID + "="
+													+ mDialogSelectId, null);
 								}
 							})
 					.setNegativeButton(R.string.cannel,
@@ -278,24 +276,20 @@ public class InputActivity extends ExpandableListActivity implements
 		return null;
 	}
 
-	//private RadioButton mRadioSelect;
-	
+
+	private CheckedTextView mCheckedTextView;
 	
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
 		mCategory = id;
-		CheckedTextView ctv = (CheckedTextView) v;
-		ctv.setChecked(true);
-//		LinearLayout ll = (LinearLayout) v;
-//		RadioButton radioButton = (RadioButton) ll.findViewById(R.id.radio1);
-//		if (mRadioSelect != null) {
-//			mRadioSelect.setChecked(false);
-//		}
-//		
-//		mRadioSelect = radioButton;
-//		mRadioSelect.setChecked(true);
 		
+		if (mCheckedTextView != null) {
+			mCheckedTextView.setChecked(false);
+		}
+		mCheckedTextView = (CheckedTextView) v;
+		mCheckedTextView.setChecked(true);
+
 		return true;
 	}
 
@@ -305,37 +299,27 @@ public class InputActivity extends ExpandableListActivity implements
 				new String(CategoryColumns.TYPE + "=0"), null, null);
 		mGroupIndex = groupCursor.getColumnIndex(CategoryColumns._ID);
 
-		mAdapter = new CategoryAdapter(
-				groupCursor,
-				this,
-				android.R.layout.simple_expandable_list_item_1,
-				android.R.layout.simple_list_item_single_choice,
-//				R.layout.expandable_son,
-//				R.layout.expandable_test,
-				new String[] { CategoryColumns.NAME },
-				new int[] { android.R.id.text1 },
-				new String[] { CategoryColumns.NAME },
-//				new int[] { R.id.radio1 });
-				new int[] { android.R.id.text1 });
+		mAdapter = new CategoryAdapter(this, 
+				groupCursor, 
+				android.R.layout.simple_expandable_list_item_1, 
+				android.R.layout.simple_list_item_single_choice);
+		
 
 		setListAdapter(mAdapter);
 
 		final ExpandableListView listView = getExpandableListView();
 		listView.setItemsCanFocus(false);
-		listView.setChoiceMode(listView.CHOICE_MODE_MULTIPLE);
 
 		registerForContextMenu(getExpandableListView());
 
 		output();
 	}
 
-	public class CategoryAdapter extends SimpleCursorTreeAdapter {
+	public class CategoryAdapter extends ResourceCursorTreeAdapter {
 
-		public CategoryAdapter(Cursor cursor, Context context, int groupLayout,
-				int childLayout, String[] groupFrom, int[] groupTo,
-				String[] childrenFrom, int[] childrenTo) {
-			super(context, cursor, groupLayout, groupFrom, groupTo,
-					childLayout, childrenFrom, childrenTo);
+		public CategoryAdapter(Context context, Cursor cursor, int groupLayout,
+				int childLayout) {
+			super(context, cursor, groupLayout, childLayout);
 		}
 
 		@Override
@@ -346,8 +330,34 @@ public class InputActivity extends ExpandableListActivity implements
 		}
 
 		@Override
-		public ViewBinder getViewBinder() {
-			return super.getViewBinder();
+		protected void bindGroupView(View view, Context context, Cursor cursor,
+				boolean isExpanded) {
+			TextView tv;
+			
+			if (view == null) {
+				tv = (TextView) newGroupView(context, cursor, isExpanded, null);
+			} else {
+				tv = (TextView) view;
+			}
+			
+			String name = cursor.getString(1);
+			tv.setText(name);
+			view = tv;	
+		}
+
+		@Override
+		protected void bindChildView(View view, Context context, Cursor cursor,
+				boolean isLastChild) {
+			CheckedTextView ctv;
+			if (view == null) {
+				ctv = (CheckedTextView) newChildView(context, cursor, isLastChild, null);
+			} else {
+				ctv = (CheckedTextView) view;
+			}
+			
+			String name = cursor.getString(1);
+			ctv.setText(name);
+			view = ctv;
 		}
 	}
 
@@ -370,13 +380,9 @@ public class InputActivity extends ExpandableListActivity implements
 		}
 	}
 
-	static private final String sRecordAllColumns[] = {
-		RecordColumns.BEGIN,
-		RecordColumns.END,
-		RecordColumns.CATEGORY,
-		RecordColumns.NOTE
-	};
-	
+	static private final String sRecordAllColumns[] = { RecordColumns.BEGIN,
+			RecordColumns.END, RecordColumns.CATEGORY, RecordColumns.NOTE };
+
 	private void init() {
 		Bundle bundle = getIntent().getExtras();
 		long id = bundle.getLong(sId);
@@ -387,14 +393,15 @@ public class InputActivity extends ExpandableListActivity implements
 			end = bundle.getLong(sEnd);
 		} else {
 			mUri = ContentUris.withAppendedId(RecordColumns.CONTENT_URI, id);
-			Cursor cursor = managedQuery(mUri, sRecordAllColumns, null, null, null);
+			Cursor cursor = managedQuery(mUri, sRecordAllColumns, null, null,
+					null);
 			cursor.moveToFirst();
 			begin = cursor.getLong(0);
 			end = cursor.getLong(1);
 			mCategory = cursor.getLong(2);
 			note = cursor.getString(3);
 		}
-		
+
 		mTimeBegin = begin;
 		mTimeEnd = end;
 
@@ -494,7 +501,7 @@ public class InputActivity extends ExpandableListActivity implements
 
 		values.put(RecordColumns.CATEGORY, mCategory);
 		values.put(RecordColumns.NOTE, mEditNote.getText().toString());
-		
+
 		if (mUri == null) {
 			getContentResolver().insert(RecordColumns.CONTENT_URI, values);
 		} else {
