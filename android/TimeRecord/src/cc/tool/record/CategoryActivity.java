@@ -116,18 +116,12 @@ public class CategoryActivity extends ExpandableListActivity {
 
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
-		// Toast.makeText(this, "1", Toast.LENGTH_SHORT);
 		switch (item.getItemId()) {
 		case 1:
 			Intent i = new Intent(this, CategoryChange.class);
 			i.putExtra(CategoryChange.sID, 0);
 			startActivity(i);
 
-//			Toast.makeText(this, "lll", Toast.LENGTH_SHORT).show();
-//			ContentValues values = new ContentValues();
-//			values.put(CategoryColumns.NAME, "name");
-//			values.put(CategoryColumns.TYPE, 0);
-//			getContentResolver().insert(CategoryColumns.CONTENT_URI, values);
 			break;
 		case 2:
 			break;

@@ -4,21 +4,17 @@ import java.util.Calendar;
 
 import android.app.AlertDialog;
 import android.app.Dialog;
-import android.app.ListActivity;
 import android.content.DialogInterface;
 import android.database.Cursor;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.LinearLayout;
-import android.widget.Toast;
-import cc.tool.record.GeneralModule.TodayCoursrAdapter;
 import cc.tool.record.TimeRecord.RecordColumns;
 
-public class StatsActivity extends ListActivity {
+public class StatsActivity extends RecordListActivity {
 	
 	Calendar mCalendarBegin;
 	Calendar mCalendarEnd;
@@ -31,7 +27,6 @@ public class StatsActivity extends ListActivity {
 	}
 	
 	private Button btnDate;
-	private TodayCoursrAdapter mAdapter;
 	
 	private void init() {
 		mCalendarBegin = GeneralModule.getCalerdarDay();
@@ -46,37 +41,28 @@ public class StatsActivity extends ListActivity {
 		});
 		btnDate.setText(getDateSelectString());
 		
-        getListView().setEmptyView(findViewById(R.id.empty));
-
-		String condition = getCondition();
-		Log.d("stats", condition);
-		
-        Cursor cursor = managedQuery(RecordColumns.CONTENT_URI, 
-        		GeneralModule.sSelectCategory, 
-        		condition, 
-        		null, 
-        		RecordColumns.BEGIN);
-        
-        mAdapter = new TodayCoursrAdapter(this, 
-        		R.layout.list_item_all_date, cursor);
-
-        setListAdapter(mAdapter);
-        registerForContextMenu(getListView());
+		setList();
+	}
+	
+	@Override
+	protected int getListItemLayout() {
+		return R.layout.list_item_all_date;
 	}
 	
 	private void updateSelectDate(Calendar begin, Calendar end) {
 		mCalendarBegin = begin;
 		mCalendarEnd = end;
 		
-		String condition = getCondition();
-		Log.d("stats", condition);
+		String condition = getSelectCondition();
         Cursor cursor = managedQuery(RecordColumns.CONTENT_URI, 
         		GeneralModule.sSelectCategory, 
-        		condition, 
+        		condition,
         		null, 
         		RecordColumns.BEGIN);
+
+        changeCursor(cursor);
         
-        mAdapter.changeCursor(cursor);
+		btnDate.setText(getDateSelectString());
 	}
 	
 	private String getDateSelectString() {
@@ -84,7 +70,7 @@ public class StatsActivity extends ListActivity {
 				+ GeneralModule.dateToString(mCalendarEnd);
 	}
 		
-	private String getCondition() {
+	protected String getSelectCondition() {
 		Calendar end = Calendar.getInstance();
 		end.setTime(mCalendarEnd.getTime());
 		end.add(Calendar.DATE, 1);

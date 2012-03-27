@@ -4,37 +4,24 @@ import java.util.Calendar;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import android.app.Dialog;
-import android.app.ListActivity;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.content.ContentUris;
 import android.content.Intent;
-import android.database.Cursor;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
-import android.view.ContextMenu;
-import android.view.ContextMenu.ContextMenuInfo;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.Button;
-import android.widget.DatePicker;
-import android.widget.Gallery;
 import android.widget.TextView;
-import android.widget.TimePicker;
-import cc.tool.record.GeneralModule.TodayCoursrAdapter;
 import cc.tool.record.TimeRecord.RecordColumns;
 
-public class MainActivity extends ListActivity implements OnClickListener {
+public class MainActivity extends RecordListActivity implements OnClickListener {
 
 	private TextView mTvTime;
 	private Button mBtnStart;
@@ -50,8 +37,6 @@ public class MainActivity extends ListActivity implements OnClickListener {
 
 	private NotificationManager mNotificationManager;
 
-	private Dialog mDialogSetTime;
-	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -82,22 +67,13 @@ public class MainActivity extends ListActivity implements OnClickListener {
 			}
 		};
 		
-		mDialogSetTime = new Dialog(this);
-		mDialogSetTime.setContentView(R.layout.dialog_set_time);		
-		Button btnSetTime = (Button) mDialogSetTime.findViewById(R.id.btnOk);
-		btnSetTime.setOnClickListener(this);
-		Button btnSetNoTime = (Button) mDialogSetTime.findViewById(R.id.btnCannel);
-		btnSetNoTime.setOnClickListener(this);	
-		TimePicker timePicker = (TimePicker) mDialogSetTime.findViewById(R.id.timePicker);
-		timePicker.setIs24HourView(true);
-
 		setList();
 	}
 	
 	@Override
-	protected void onResume() {
+	protected void onStart() {
 		initTime();
-		super.onResume();
+		super.onStart();
 	}
 	
 	@Override
@@ -130,41 +106,8 @@ public class MainActivity extends ListActivity implements OnClickListener {
 		return super.onOptionsItemSelected(item);
 	}
 
-	private static final int CONTEXT_MENU_MODIFY = 1;
-	private static final int CONTEXT_MENU_DELETE = 2;
-
 	@Override
-	public void onCreateContextMenu(ContextMenu menu, View v,
-			ContextMenuInfo menuInfo) {
-		menu.add(0, CONTEXT_MENU_DELETE, 1, R.string.menu_delete);
-		menu.add(0, CONTEXT_MENU_MODIFY, 0, R.string.menu_change);
-	}
-
-	@Override
-	public boolean onContextItemSelected(MenuItem item) {
-		AdapterContextMenuInfo info;
-		info = (AdapterContextMenuInfo) item.getMenuInfo();
-		Uri uri = ContentUris
-				.withAppendedId(RecordColumns.CONTENT_URI, info.id);
-
-		switch (item.getItemId()) {
-		case CONTEXT_MENU_MODIFY:
-			Intent intent = new Intent(this, InputActivity.class);
-			intent.putExtra(InputActivity.sId, info.id);
-			startActivity(intent);
-			break;
-
-		case CONTEXT_MENU_DELETE:
-			getContentResolver().delete(uri, null, null);
-			break;
-
-		default:
-			break;
-		}
-		return super.onContextItemSelected(item);
-	}
-
-	private String getToday() {
+	protected String getSelectCondition() {
 		String today = "";
 		Calendar cal = GeneralModule.getCalerdarDay();
 
@@ -175,24 +118,12 @@ public class MainActivity extends ListActivity implements OnClickListener {
 		today += RecordColumns.BEGIN;
 		today += String.format(" < %d", cal.getTimeInMillis());
 
-		Log.d("main", today);
-
 		return today;
 	}
-
-	private void setList() {
-		getListView().setEmptyView(findViewById(R.id.empty));
-
-		Cursor mCursor = managedQuery(RecordColumns.CONTENT_URI,
-				GeneralModule.sSelectCategory, getToday(), null,
-				RecordColumns.BEGIN);
-		startManagingCursor(mCursor);
-
-		TodayCoursrAdapter mAdapter = new TodayCoursrAdapter(this,
-				R.layout.list_item_all, mCursor);
-
-		setListAdapter(mAdapter);
-		registerForContextMenu(getListView());
+	
+	@Override
+	protected int getListItemLayout() {
+		return R.layout.list_item_all;
 	}
 
 	private void setDefault(int defaults) {
@@ -207,7 +138,7 @@ public class MainActivity extends ListActivity implements OnClickListener {
 		notification.setLatestEventInfo(this, getString(R.string.app_name), text, contentIntent);
 
 		notification.defaults = defaults;
-
+		
 		mNotificationManager.notify(R.layout.activity_main, notification);
 	}
 
@@ -231,30 +162,29 @@ public class MainActivity extends ListActivity implements OnClickListener {
 
 		case R.id.tvTime:
 			if (mTimed) {
-				mDialogSetTime.show();
+				Intent intent = new Intent(this, SetTimeActivity.class);
+				intent.putExtra(SetTimeActivity.sTime, mTimeBegin);
+				startActivityForResult(intent, sRequestCode);
 			}
 			break;
 		
-		case R.id.btnOk:
-			TimePicker timePicker = (TimePicker) mDialogSetTime.findViewById(R.id.timePicker);
-			DatePicker datePicker = (DatePicker) mDialogSetTime.findViewById(R.id.datePicker);
-
-			int year = datePicker.getYear();
-			int month = datePicker.getMonth();
-			int day = datePicker.getDayOfMonth();			
-			int hour = timePicker.getCurrentHour();
-			int minute = timePicker.getCurrentMinute();
-			
-			Calendar calendar = GeneralModule.getCalerdarDay();
-			calendar.set(year, month, day, hour, minute);
-			
-			setTimeBegin(calendar.getTimeInMillis());
-			
-			mDialogSetTime.dismiss();
+		default:
 			break;
-			
-		case R.id.btnCannel:
-			mDialogSetTime.dismiss();
+		}
+	}
+	
+	private static final int sRequestCode = 1;
+	
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+		switch (requestCode) {
+		case sRequestCode:
+			if (resultCode == SetTimeActivity.sResultOk) {
+				long time = data.getLongExtra(SetTimeActivity.sTime, 0);
+				if (time != 0) {
+					setTimeBegin(time);
+				}
+			}
 			break;
 
 		default:

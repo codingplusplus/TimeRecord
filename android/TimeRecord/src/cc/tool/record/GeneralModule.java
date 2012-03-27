@@ -56,8 +56,10 @@ public class GeneralModule {
 	}
 
 	static final String[] sSelectCategory = {
-		RecordColumns.BEGIN, RecordColumns.END, 
-		RecordColumns.CATEGORY, RecordColumns.NOTE,
+		RecordColumns.BEGIN, 
+		RecordColumns.END, 
+		RecordColumns.CATEGORY, 
+		RecordColumns.NOTE,
 		RecordColumns._ID
 	};
 

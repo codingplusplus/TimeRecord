@@ -27,6 +27,8 @@ import android.widget.CheckedTextView;
 import android.widget.EditText;
 import android.widget.ExpandableListView;
 import android.widget.ExpandableListView.ExpandableListContextMenuInfo;
+import android.widget.LinearLayout;
+import android.widget.RadioButton;
 import android.widget.SimpleCursorTreeAdapter;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -276,13 +278,25 @@ public class InputActivity extends ExpandableListActivity implements
 		return null;
 	}
 
+	//private RadioButton mRadioSelect;
+	
+	
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
 		mCategory = id;
 		CheckedTextView ctv = (CheckedTextView) v;
 		ctv.setChecked(true);
-		return false;
+//		LinearLayout ll = (LinearLayout) v;
+//		RadioButton radioButton = (RadioButton) ll.findViewById(R.id.radio1);
+//		if (mRadioSelect != null) {
+//			mRadioSelect.setChecked(false);
+//		}
+//		
+//		mRadioSelect = radioButton;
+//		mRadioSelect.setChecked(true);
+		
+		return true;
 	}
 
 	private void initExpandable() {
@@ -296,16 +310,19 @@ public class InputActivity extends ExpandableListActivity implements
 				this,
 				android.R.layout.simple_expandable_list_item_1,
 				android.R.layout.simple_list_item_single_choice,
+//				R.layout.expandable_son,
+//				R.layout.expandable_test,
 				new String[] { CategoryColumns.NAME },
 				new int[] { android.R.id.text1 },
 				new String[] { CategoryColumns.NAME },
+//				new int[] { R.id.radio1 });
 				new int[] { android.R.id.text1 });
 
 		setListAdapter(mAdapter);
 
 		final ExpandableListView listView = getExpandableListView();
 		listView.setItemsCanFocus(false);
-		listView.setChoiceMode(listView.CHOICE_MODE_SINGLE);
+		listView.setChoiceMode(listView.CHOICE_MODE_MULTIPLE);
 
 		registerForContextMenu(getExpandableListView());
 
