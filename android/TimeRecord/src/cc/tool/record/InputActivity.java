@@ -66,7 +66,6 @@ public class InputActivity extends ExpandableListActivity implements
 		setContentView(R.layout.activity_input);
 
 		init();
-		initExpandable();
 	}
 
 	private static final int OPTION_MENU_ADD = 1;
@@ -276,17 +275,20 @@ public class InputActivity extends ExpandableListActivity implements
 		return null;
 	}
 
-
+	private boolean mChildClicked;
 	private CheckedTextView mCheckedTextView;
-	
+
 	@Override
 	public boolean onChildClick(ExpandableListView parent, View v,
 			int groupPosition, int childPosition, long id) {
 		mCategory = id;
 		
+		mChildClicked = true;
+		
 		if (mCheckedTextView != null) {
 			mCheckedTextView.setChecked(false);
 		}
+		
 		mCheckedTextView = (CheckedTextView) v;
 		mCheckedTextView.setChecked(true);
 		mAdapter.setSelectChildId(id);
@@ -297,23 +299,39 @@ public class InputActivity extends ExpandableListActivity implements
 	private void initExpandable() {
 		Cursor groupCursor = getContentResolver().query(
 				CategoryColumns.CONTENT_URI, mCategoryItem,
-				new String(CategoryColumns.TYPE + "=0"), null, null);
+				CategoryColumns.TYPE + "=0", null, null);
 		mGroupIndex = groupCursor.getColumnIndex(CategoryColumns._ID);
 
 		mAdapter = new CategoryAdapter(this, 
 				groupCursor, 
 				android.R.layout.simple_expandable_list_item_1, 
 				android.R.layout.simple_list_item_single_choice);
-		
 
 		setListAdapter(mAdapter);
-
-		final ExpandableListView listView = getExpandableListView();
-		listView.setItemsCanFocus(false);
-
 		registerForContextMenu(getExpandableListView());
 
-		output();
+		if (mCategory != 0) {
+			mAdapter.setSelectChildId(mCategory);
+			
+			Uri uri = ContentUris.withAppendedId(CategoryColumns.CONTENT_URI, mCategory);
+			Cursor cursor = getContentResolver().query(uri, 
+					new String[] { CategoryColumns.TYPE, CategoryColumns.NAME}, null, null, null);
+			cursor.moveToFirst();
+			long groupId = cursor.getLong(0);
+			cursor.close();
+			
+			int groupCount = mAdapter.getGroupCount();
+			int groupPos = 0;
+			for (; groupPos < groupCount; ++groupPos) {
+				if (mAdapter.getGroupId(groupPos) == groupId) {
+					break;
+				}
+			}
+			
+			ExpandableListView elv = getExpandableListView();
+			elv.expandGroup(groupPos);
+			elv.setSelectedGroup(groupPos);
+		}
 	}
 
 	public class CategoryAdapter extends ResourceCursorTreeAdapter {
@@ -329,27 +347,27 @@ public class InputActivity extends ExpandableListActivity implements
 			return managedQuery(CategoryColumns.CONTENT_URI, mCategoryItem,
 					CategoryColumns.TYPE + String.format("=%d", id), null, null);
 		}
-		
+
 		private long mSelectChildId;
-		
+
 		public void setSelectChildId(long id) {
 			mSelectChildId = id;
 		}
-		
+
 		@Override
 		protected void bindGroupView(View view, Context context, Cursor cursor,
 				boolean isExpanded) {
 			TextView tv;
-			
+
 			if (view == null) {
 				tv = (TextView) newGroupView(context, cursor, isExpanded, null);
 			} else {
 				tv = (TextView) view;
 			}
-			
+
 			String name = cursor.getString(1);
 			tv.setText(name);
-			view = tv;	
+			view = tv;
 		}
 
 		@Override
@@ -357,25 +375,30 @@ public class InputActivity extends ExpandableListActivity implements
 				boolean isLastChild) {
 			CheckedTextView ctv;
 			if (view == null) {
-				ctv = (CheckedTextView) newChildView(context, cursor, isLastChild, null);
+				ctv = (CheckedTextView) newChildView(context, cursor,
+						isLastChild, null);
 			} else {
 				ctv = (CheckedTextView) view;
 			}
-			
+
 			String name = cursor.getString(1);
 			ctv.setText(name);
-			
+
 			long id = cursor.getLong(0);
 			if (id == mSelectChildId) {
 				ctv.setChecked(true);
+				if (!mChildClicked) {
+					mCheckedTextView = ctv;
+				}
 			} else {
 				ctv.setChecked(false);
 			}
-			
+
 			view = ctv;
 		}
 	}
 
+	// 测试用，输出所有category数据
 	private void output() {
 
 		Cursor cc = managedQuery(CategoryColumns.CONTENT_URI, null, null, null,
@@ -438,6 +461,8 @@ public class InputActivity extends ExpandableListActivity implements
 		mEditNote.setText(note);
 
 		mBtnBegin.setFocusable(true);
+
+		initExpandable();
 	}
 
 	private void setTimeDisplay(Button btnTime, long time) {

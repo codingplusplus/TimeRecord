@@ -15,8 +15,8 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 
 	public static String sTime = "time";
 	
-	private DatePicker datePicker;
-	private TimePicker timePicker;
+	private DatePicker mDatePicker;
+	private TimePicker mTimePicker;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -33,9 +33,9 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 		Button btnCannel = (Button) findViewById(R.id.btnCannel);
 		btnCannel.setOnClickListener(this);
 		
-		timePicker = (TimePicker) findViewById(R.id.timePicker);
-		datePicker = (DatePicker) findViewById(R.id.datePicker);
-		timePicker.setIs24HourView(true);
+		mTimePicker = (TimePicker) findViewById(R.id.timePicker);
+		mDatePicker = (DatePicker) findViewById(R.id.datePicker);
+		mTimePicker.setIs24HourView(true);
 		Bundle bundle = getIntent().getExtras();
 		long time = bundle.getLong(sTime);		
 
@@ -48,21 +48,24 @@ public class SetTimeActivity extends Activity implements OnClickListener{
 		int hour = cal.get(Calendar.HOUR_OF_DAY);
 		int minute = cal.get(Calendar.MINUTE);
 		
-		datePicker.updateDate(year, month, day);
-		timePicker.setCurrentHour(hour);
-		timePicker.setCurrentMinute(minute);
+		mDatePicker.updateDate(year, month, day);
+		mTimePicker.setCurrentHour(hour);
+		mTimePicker.setCurrentMinute(minute);
 	}
 	
 	public static int sResultOk = 1; 
 	public static int sResultCannel = 2;
 	
 	private long getTime() {
-		int year = datePicker.getYear();
-		int month = datePicker.getMonth();
-		int day = datePicker.getDayOfMonth();
+		mDatePicker.clearFocus();
+		mTimePicker.clearFocus();
 		
-		int hour = timePicker.getCurrentHour();
-		int minute = timePicker.getCurrentMinute();
+		int year = mDatePicker.getYear();
+		int month = mDatePicker.getMonth();
+		int day = mDatePicker.getDayOfMonth();
+		
+		int hour = mTimePicker.getCurrentHour();
+		int minute = mTimePicker.getCurrentMinute();
 		
 		Calendar calendar = Calendar.getInstance();
 		calendar.set(year, month, day, hour, minute);

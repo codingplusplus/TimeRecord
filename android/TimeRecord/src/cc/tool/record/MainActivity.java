@@ -103,15 +103,13 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 
 	@Override
 	protected String getSelectCondition() {
-		String today = "";
 		Calendar cal = GeneralModule.getCalerdarDay();
+		long begin = cal.getTimeInMillis();
+		cal.add(Calendar.DATE, 1);
+		long end = cal.getTimeInMillis();
 
-		today += RecordColumns.BEGIN;
-		today += String.format(" >= %d and ", cal.getTimeInMillis());
-
-		cal.add(Calendar.HOUR_OF_DAY, 24);
-		today += RecordColumns.BEGIN;
-		today += String.format(" < %d", cal.getTimeInMillis());
+		String today = RecordColumns.BEGIN + ">=" + begin + " and " 
+				+ RecordColumns.BEGIN + "<" + end;
 
 		return today;
 	}
