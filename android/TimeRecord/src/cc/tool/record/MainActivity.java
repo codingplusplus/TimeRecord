@@ -74,7 +74,7 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 	protected void onResume() {
 		super.onResume();
 		updateList();
-		if (mTimeBegin == 0) {
+		if (mTimeBegin == 0 && mTimer == null) {
 			mTimer = new Timer();
 			mTimer.schedule(new TimerTask() {
 				@Override
@@ -160,7 +160,10 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 				setTimeEnd();
 			} else {
 				btnName = getString(R.string.stop);
+				
 				mTimer.cancel();
+				mTimer = null;
+				
 				setTimeBegin(getTimeMill());
 			}
 			mTimed = !mTimed;
