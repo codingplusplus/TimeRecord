@@ -68,7 +68,22 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 		};
 		
 		setList();
-		initTime();
+	}
+	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		updateList();
+		if (mTimeBegin == 0) {
+			mTimer = new Timer();
+			mTimer.schedule(new TimerTask() {
+				@Override
+				public void run() {
+					mHandler.sendEmptyMessage(0);
+				}
+			}, 0, 500);
+			mTvTime.setGravity(Gravity.CENTER);
+		}
 	}
 	
 	@Override
@@ -187,7 +202,7 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
+		if (keyCode == KeyEvent.KEYCODE_BACK && mTimeBegin != 0) {
 			Intent MyIntent = new Intent(Intent.ACTION_MAIN);
 			MyIntent.addCategory(Intent.CATEGORY_HOME);
 			startActivity(MyIntent);
@@ -219,24 +234,12 @@ public class MainActivity extends RecordListActivity implements OnClickListener 
 		intent.putExtra(InputActivity.sEnd, mTimeEnd);
 		this.startActivity(intent);
 
-		initTime();
+		mTimeBegin = 0;
+		mTimeEnd = 0;
 	}
 
 	private long getTimeMill() {
 		Calendar cal = Calendar.getInstance();
 		return cal.getTimeInMillis();
-	}
-
-	private void initTime() {
-		mTimer = new Timer();
-		mTimer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				mHandler.sendEmptyMessage(0);
-			}
-		}, 0, 500);
-		mTvTime.setGravity(Gravity.CENTER);
-		mTimeBegin = 0;
-		mTimeEnd = 0;
 	}
 }

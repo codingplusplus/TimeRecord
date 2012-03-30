@@ -20,16 +20,22 @@ public abstract class RecordListActivity extends ListActivity {
 	protected void setList() {
 		getListView().setEmptyView(findViewById(R.id.empty));
 
-		Cursor mCursor = managedQuery(RecordColumns.CONTENT_URI,
+		Cursor cursor = managedQuery(RecordColumns.CONTENT_URI,
 				GeneralModule.sSelectCategory, getSelectCondition(), null,
 				RecordColumns.BEGIN);
-		startManagingCursor(mCursor);
 
 		mAdapter = new TodayCoursrAdapter(this,
-				getListItemLayout(), mCursor);
+				getListItemLayout(), cursor);
 
 		setListAdapter(mAdapter);
 		registerForContextMenu(getListView());
+	}
+	
+	protected void updateList() {
+		Cursor cursor = managedQuery(RecordColumns.CONTENT_URI,
+				GeneralModule.sSelectCategory, getSelectCondition(), null,
+				RecordColumns.BEGIN);
+		mAdapter.changeCursor(cursor);
 	}
 	
 	protected void changeCursor(Cursor cursor) {
